@@ -7,6 +7,10 @@ import { AppService } from './app.service';
 import { appConfig } from './config/app.config';
 import { SharedModule } from './shared/shared.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './modules/auth/auth.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { SubjectModule } from './modules/subjects/subject.module';
+import { QuizModule } from './modules/quizzes/quiz.module';
 
 @Module({
   imports: [
@@ -16,7 +20,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       useFactory: (configService: ConfigService) => databaseConfig(configService),
       inject: [ConfigService],
     }),
-    SharedModule
+    SharedModule,
+    AuthModule,
+    AdminModule,
+    SubjectModule,
+    QuizModule,
+
   ],
   controllers: [AppController],
   providers: [AppService]
