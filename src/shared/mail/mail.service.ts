@@ -18,8 +18,13 @@ export class MailService {
     @Inject('MAIL_TRANSPORTER') private transporter: nodemailer.Transporter,
     private configService: ConfigService,
   ) {
-    this.fromEmail = this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
-    this.fromName = this.configService.get<string>('SMTP_FROM_NAME', 'NestJS App');
+    this.fromEmail =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('SMTP_USER');
+    this.fromName = this.configService.get<string>(
+      'SMTP_FROM_NAME',
+      'NestJS App',
+    );
   }
 
   async sendEmail(options: EmailOptions): Promise<nodemailer.SentMessageInfo> {
@@ -36,7 +41,10 @@ export class MailService {
     return result;
   }
 
-  async sendWelcomeEmail(to: string, username: string): Promise<nodemailer.SentMessageInfo> {
+  async sendWelcomeEmail(
+    to: string,
+    username: string,
+  ): Promise<nodemailer.SentMessageInfo> {
     return this.sendEmail({
       to,
       subject: 'Chào mừng bạn!',
@@ -48,9 +56,13 @@ export class MailService {
     });
   }
 
-  async sendPasswordResetEmail(to: string, resetToken: string, username: string): Promise<nodemailer.SentMessageInfo> {
+  async sendPasswordResetEmail(
+    to: string,
+    resetToken: string,
+    username: string,
+  ): Promise<nodemailer.SentMessageInfo> {
     const resetUrl = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${resetToken}`;
-    
+
     return this.sendEmail({
       to,
       subject: 'Đặt lại mật khẩu',
@@ -63,7 +75,11 @@ export class MailService {
     });
   }
 
-  async sendNotificationEmail(to: string | string[], title: string, message: string): Promise<nodemailer.SentMessageInfo> {
+  async sendNotificationEmail(
+    to: string | string[],
+    title: string,
+    message: string,
+  ): Promise<nodemailer.SentMessageInfo> {
     return this.sendEmail({
       to,
       subject: title,
@@ -73,4 +89,23 @@ export class MailService {
       `,
     });
   }
-} 
+
+  async sendRegisterationConfirmationEmail(
+    to: string,
+    username: string,
+    verificationToken: string,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const verificationUrl = `${this.configService.get<string>('FRONTEND_URL')}/verify-email?token=${verificationToken}`;
+
+    return this.sendEmail({
+      to,
+      subject: 'Xác nhận đăng ký tài khoản',
+      html: `
+        <h2>Xin chào ${username}!</h2>
+        <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng xác nhận email của bạn bằng cách nhấp vào liên kết sau:</p>
+        <a href="${verificationUrl}">Xác nhận email</a>
+        <p>Link: ${verificationUrl}</p>
+      `,
+    });
+  }
+}
