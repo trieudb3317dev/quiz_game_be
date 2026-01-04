@@ -97,3 +97,33 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Cấu trúc thư mục (Project structure)
+
+Dưới đây là mô tả ngắn gọn cấu trúc thư mục chính của dự án (phiên bản rút gọn):
+
+- `src/` - Mã nguồn TypeScript của ứng dụng NestJS.
+  - `config/` - Cấu hình ứng dụng (ví dụ: `app.config.ts`, `database.config.ts`).
+  - `exceptions/` - Bộ lọc lỗi và xử lý ngoại lệ tùy chỉnh (ví dụ: `database-exception.filter.ts`).
+  - `middleware/` - Middleware dùng chung (ví dụ: logger, rate limiter).
+  - `modules/` - Các module chức năng theo miền (domain):
+    - `admin/` - Quản trị (controller, dto, entity, guard, service, strategy).
+    - `auth/` - Xác thực (controller, dto, guard, service, strategy).
+    - `games/` - (thư mục cho chức năng game, triển khai bên trong).
+    - `join-rooms/` - Chức năng tham gia phòng (controller, dto, entity, service).
+    - `quizzes/` - Quản lý quiz (controller, dto, entity, service).
+    - `rooms/` - Quản lý phòng chơi.
+    - `sessions/` - Phiên chơi / session.
+    - `subjects/` - Chủ đề và các thực thể liên quan (ví dụ: `subject.entity.ts`, `sub-subject.entity.ts`).
+    - `users/` - Thực thể người dùng.
+  - `shared/` - Mã dùng chung giữa các module (module chung, providers, cache, cloudinary, mail, ...).
+  - `utils/` - Các tiện ích (ví dụ: `slugify.ts`, `parseLine.ts`).
+
+- Top-level files:
+  - `package.json` - Quản lý phụ thuộc và script chạy (yarn/npm).
+  - `tsconfig.json` / `tsconfig.build.json` - Cấu hình TypeScript.
+  - `Dockerfile` - Docker image build (nếu có).
+  - `create-db.js` - Script tạo DB (nếu dự án sử dụng script này).
+  - `.env` / `.env.example` - Biến môi trường (không commit file `.env` thực tế vào git).
+
+Gợi ý ngắn: README này giữ phần giới thiệu mặc định của Nest; phần "Cấu trúc thư mục" ở trên giúp các cộng tác viên mới nhanh nắm repo. Nếu bạn muốn, mình có thể mở rộng mô tả cho từng module (ví dụ liệt kê endpoint cơ bản, entity chính, hoặc sơ đồ ER cho database).
