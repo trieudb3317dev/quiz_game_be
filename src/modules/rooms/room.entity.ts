@@ -1,12 +1,14 @@
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Session } from '../sessions/session.entity';
+import { SubSubject } from '../subjects/sub-subject.entity';
 
 @Entity('rooms')
 export class Room {
@@ -24,7 +26,15 @@ export class Room {
     onDelete: 'CASCADE',
     nullable: true,
   })
+  @JoinColumn({name: 'session_id'})
   session: Session | null;
+
+  @OneToOne(() => SubSubject, (subSubject) => subSubject.id, {
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  @JoinColumn({name: 'sub_subject_id'})
+  sub_subject: SubSubject | null;
 
   @Column({ unique: true })
   name: string;

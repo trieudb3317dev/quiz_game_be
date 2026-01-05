@@ -11,6 +11,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { SubjectModule } from './modules/subjects/subject.module';
 import { QuizModule } from './modules/quizzes/quiz.module';
+import { RoomModule } from './modules/rooms/room.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { QuizModule } from './modules/quizzes/quiz.module';
     AdminModule,
     SubjectModule,
     QuizModule,
+    RoomModule
 
   ],
   controllers: [AppController],
