@@ -10,7 +10,6 @@ import {
   AnswerDto,
   QueryDto,
   QuizDto,
-  QuizResponseDto,
   ResponseDto,
 } from './quiz.dto';
 

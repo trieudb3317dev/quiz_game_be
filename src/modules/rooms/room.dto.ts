@@ -1,6 +1,44 @@
-import { Entity } from "typeorm";
+export class RoomDto {
+  id: number;
+  name: string;
+  slug?: string;
+  description?: string;
+  is_active: boolean;
+  created_at: Date;
+}
 
-@Entity('rooms')
-export class Room {
-    // Define room entity properties and columns here
+export class CreateRoomDto {
+  sub_subject_id: number;
+  name: string;
+  slug?: string;
+  description?: string;
+}
+
+export class UpdateRoomDto {
+  name?: string;
+  slug?: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+export class QueryDto {
+  search?: string;
+  sortBy?: 'created_at';
+  sortOrder?: 'ASC' | 'DESC';
+  page?: number;
+  limit?: number;
+}
+
+export class PaginationDto {
+  page?: number;
+  limit?: number;
+  totalItems: number;
+  totalPages: number;
+  nextPage: number | boolean;
+  prevPage: number | boolean;
+}
+
+export class ResponseDto<T> {
+  data: T[];
+  pagination: PaginationDto;
 }
