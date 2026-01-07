@@ -21,6 +21,18 @@ export class Quiz {
   @Column({ nullable: true })
   description: string;
 
+  @Column({ default: 30, nullable: true })
+  time_limit: number; // 30 seconds
+
+  @Column({ default: 300, nullable: true })
+  score: number;
+
+  @Column({ nullable: true, default: 0 })
+  score_remaining: number;
+
+  @Column({ default: 0, nullable: true })
+  score_reward: number;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 }
@@ -33,6 +45,9 @@ export class QuizAnswer {
 
   @ManyToOne(() => Quiz, (quiz) => quiz.id, { onDelete: 'CASCADE' })
   quiz: Quiz;
+
+  @Column()
+  answer_type: string;
 
   @Column()
   answer_text: string;
