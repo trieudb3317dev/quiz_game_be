@@ -12,6 +12,10 @@ import { AdminModule } from './modules/admin/admin.module';
 import { SubjectModule } from './modules/subjects/subject.module';
 import { QuizModule } from './modules/quizzes/quiz.module';
 import { RoomModule } from './modules/rooms/room.module';
+import { GameResultModule } from './modules/game-results/game-result.module';
+import { JoinRoomModule } from './modules/join-rooms/join-room.module';
+import { WebsocketModule } from './modules/websockets/websocket.module';
+import { AnswerSelectModule } from './modules/ans-selects/ans-select.module';
 
 @Module({
   imports: [
@@ -26,8 +30,11 @@ import { RoomModule } from './modules/rooms/room.module';
     AdminModule,
     SubjectModule,
     QuizModule,
-    RoomModule
-
+    RoomModule,
+    GameResultModule,
+    JoinRoomModule,
+    WebsocketModule,
+    AnswerSelectModule
   ],
   controllers: [AppController],
   providers: [AppService]
