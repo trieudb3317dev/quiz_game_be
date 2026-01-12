@@ -7,6 +7,13 @@ export enum AdminRole {
   CONTENT_MANAGER = 'content_manager',
 }
 
+export enum GenderType {
+  MALE = 'male',
+  FEMALE = 'female',
+  OTHER = 'other',
+  NULL = 'null',
+}
+
 @Entity('user-admins')
 export class Admin {
   // Define user entity properties and columns here
@@ -30,6 +37,20 @@ export class Admin {
 
   @Column({ nullable: true })
   avatar_url: string;
+
+  @Column({
+    type: 'date',
+    nullable: true,
+  })
+  date_of_birth: Date;
+
+  @Column({
+    type: 'enum',
+    enum: GenderType,
+    nullable: true,
+    default: GenderType.NULL,
+  })
+  gender: GenderType;
 
   @Column({ nullable: true })
   address: string;

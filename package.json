@@ -89,7 +89,8 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "unzipper": "^0.12.3"
   },
   "jest": {
     "moduleFileExtensions": [

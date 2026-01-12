@@ -125,6 +125,7 @@ export class JoinRoomService {
         .leftJoin('join_room.user', 'user')
         .leftJoin('join_room.room', 'room')
         .select([
+          'join_room.id',
           'user.id',
           'user.username',
           'user.email',
@@ -134,7 +135,7 @@ export class JoinRoomService {
           'room.name',
           'join_room.joined_at',
         ])
-        .where('join_room.room_id = :roomId', { roomId });
+        .where('room.id = :roomId', { roomId });
 
       if (search && search.trim().length > 0) {
         qb.andWhere(
@@ -197,7 +198,7 @@ export class JoinRoomService {
     } catch (error) {
       this.logger.error(`Failed to retrieve joiners: ${error.message}`);
       throw new HttpException(
-        'Internal server error',
+        `Internal server error ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -205,11 +206,11 @@ export class JoinRoomService {
 
   // Get one joiner record
   async getJoiner(
-    userId: number,
+    joinerId: number,
     roomId: number,
   ): Promise<JoinersResponseDto | null> {
     this.logger.log(
-      `Retrieving joiner record for user ${userId} in room ${roomId}`,
+      `Retrieving joiner record for joiner ${joinerId} in room ${roomId}`,
     );
     try {
       const joinRoom = await this.joinRoomRepository
@@ -217,6 +218,7 @@ export class JoinRoomService {
         .leftJoin('join_room.user', 'user')
         .leftJoin('join_room.room', 'room')
         .select([
+          'join_room.id',
           'user.id',
           'user.username',
           'user.email',
@@ -226,13 +228,13 @@ export class JoinRoomService {
           'room.name',
           'join_room.joined_at',
         ])
-        .where('join_room.user_id = :userId', { userId })
-        .andWhere('join_room.room_id = :roomId', { roomId })
+        .where('join_room.id = :joinerId', { joinerId })
+        .andWhere('room.id = :roomId', { roomId })
         .getOne();
 
       if (!joinRoom) {
         this.logger.error(
-          `Joiner record for user ${userId} in room ${roomId} not found`,
+          `Joiner record for joiner ${joinerId} in room ${roomId} not found`,
         );
         throw new HttpException(
           'Joiner record not found',

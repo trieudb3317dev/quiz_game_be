@@ -5,10 +5,11 @@ import { AdminModule } from '../admin/admin.module';
 import { QuizController } from './quiz.controller';
 import { QuizService } from './quiz.service';
 import { SubSubject } from '../subjects/sub-subject.entity';
+import { User } from '../users/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Quiz, QuizAnswer, SubSubject]),
+    TypeOrmModule.forFeature([Quiz, QuizAnswer, SubSubject, User]),
     AdminModule,
   ],
   controllers: [QuizController],
@@ -16,4 +17,3 @@ import { SubSubject } from '../subjects/sub-subject.entity';
   exports: [QuizService],
 })
 export class QuizModule {}
-  

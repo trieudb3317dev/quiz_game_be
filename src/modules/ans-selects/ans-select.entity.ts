@@ -14,7 +14,7 @@ export class AnswerSelect {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => QuizAnswer, (quizAnswer) => quizAnswer.id, {
+  @ManyToOne(() => QuizAnswer, (quizAnswer) => quizAnswer.id, {
     onDelete: 'CASCADE',
   })
   quiz_answer: QuizAnswer;

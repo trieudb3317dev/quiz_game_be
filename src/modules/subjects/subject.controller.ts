@@ -14,6 +14,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { SubjectService } from './subject.service';
+import { UseInterceptors, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -32,11 +34,16 @@ export class SubjectController {
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @Post('import/csv')
+  @UseInterceptors(FileInterceptor('file'))
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAdminAuthGuard)
   async importSubjectsFromCSV(
     @Req() req: any,
     @UploadedFile() file: Express.Multer.File,
   ) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
     // If multer stores file on disk, file.path is available
     let filePathToPass: string | undefined = (file as any).path;
 
@@ -58,6 +65,7 @@ export class SubjectController {
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @Get('export/csv')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAdminAuthGuard)
   async exportSubjectsToCSV() {
     return this.subjectService.exportSubjectsToCSV();
   }
@@ -113,11 +121,16 @@ export class SubjectController {
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @Post('sub-subjects/import/csv')
+  @UseInterceptors(FileInterceptor('file'))
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAdminAuthGuard)
   async importSubSubjectsFromCSV(
     @Req() req: any,
     @UploadedFile() file: Express.Multer.File,
   ) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
     let filePathToPass: string | undefined = (file as any).path;
 
     if (!filePathToPass && (file as any).buffer) {
@@ -137,6 +150,7 @@ export class SubjectController {
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @Get('sub-subjects/export/csv')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAdminAuthGuard)
   async exportSubSubjectsToCSV() {
     return this.subjectService.exportSubSubjectsToCSV();
   }
@@ -144,7 +158,7 @@ export class SubjectController {
   @ApiOperation({ summary: 'Get sub-subjects' })
   @ApiResponse({ status: 200, description: 'Sub-subjects retrieved successfully.' })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
-  @Get('sub-subjects')
+  @Get('sub-subjects/all')
   @HttpCode(HttpStatus.OK)
   async getSubSubjects(@Query() query: QueryDto) {
     return this.subjectService.findAllSubSubjects(query);

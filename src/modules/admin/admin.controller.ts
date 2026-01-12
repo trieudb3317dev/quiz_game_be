@@ -54,6 +54,7 @@ export class AdminController {
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @HttpCode(HttpStatus.OK)
+  @Post('logout')
   async logout(@Res({ passthrough: true }) response: Response) {
     return await this.adminService.logout(response);
   }
@@ -76,6 +77,7 @@ export class AdminController {
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @HttpCode(HttpStatus.OK)
+  @Post('forgot-password')
   async forgotPassword(@Body() body: { email: string }) {
     return await this.adminService.forgotPassword(body.email);
   }
@@ -91,6 +93,7 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAdminAuthGuard)
   async me(@Req() request: any) {
+    console.log('AdminController.me called', request.user);
     const userId = request.user?.id;
     return await this.adminService.me(userId);
   }

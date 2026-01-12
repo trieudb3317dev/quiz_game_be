@@ -54,6 +54,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @HttpCode(HttpStatus.OK)
+  @Post('logout')
   async logout(@Res({ passthrough: true }) response: Response) {
     return await this.authService.logout(response);
   }

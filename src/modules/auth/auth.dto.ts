@@ -89,6 +89,12 @@ export class UpdateUserDto {
   @IsString({
     message: 'Address must be a string',
   })
+
+  @IsString({
+    message: 'Gender must be a string',
+  })
+  gender?: string;
+
   address?: string;
   @IsString({
     message: 'Phone number must be a string',
@@ -102,6 +108,8 @@ export class ResponseDto {
   email: string;
   full_name?: string;
   avatar_url?: string;
+  date_of_birth?: Date;
+  gender?: string;
   address?: string;
   phone_number?: string;
   last_login?: Date;

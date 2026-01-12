@@ -3,11 +3,9 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { JoinRoom } from '../join-rooms/join-room.entity';
-import { AnswerSelect } from '../ans-selects/ans-select.entity';
 
 @Entity('game_results')
 export class GameResult {
@@ -22,15 +20,23 @@ export class GameResult {
   @JoinColumn({ name: 'join_room_id' })
   join_room: JoinRoom;
 
-  @OneToOne(() => AnswerSelect, (ansSelect) => ansSelect.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
-  @JoinColumn({ name: 'answer_select_id' })
-  answer_select: AnswerSelect;
-
   @Column({ default: 0 })
   score: number;
+
+  @Column({ default: 0 })
+  speed_bonus: number;
+
+  @Column({ default: 0 })
+  accuracy_bonus: number;
+
+  @Column({ default: 0 })
+  total_score: number;
+
+  @Column({ default: false })
+  correct: boolean;
+
+  @Column({ nullable: true })
+  answer_select_id: number;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;

@@ -33,7 +33,7 @@ export class SubjectService {
   // Logic for subjects import/export, other subject-related methods
 
   async importSubjectsFromCSV(
-    userId: number, 
+    userId: number,
     filePath: string,
   ): Promise<{ message: string; summary?: any; filePath?: string }> {
     try {
@@ -113,7 +113,6 @@ export class SubjectService {
             where: [
               { title: name, is_active: false },
               { slug: slug, is_active: false },
-              { is_active: false }
             ],
           });
           if (exists) {
@@ -145,8 +144,9 @@ export class SubjectService {
         summary,
       };
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof HttpException) {
         this.logger.error(`Import subjects failed: ${error.message}`);
+        throw error;
       }
       throw new HttpException(
         'Failed to import subjects',
@@ -199,12 +199,18 @@ export class SubjectService {
       const skip = (page - 1) * limit;
       const qb = this.subjectRepository
         .createQueryBuilder('subject')
+        .where('subject.is_active = false')
+        .leftJoin('subject.created_by', 'admin')
         .select([
           'subject.id',
           'subject.title',
           'subject.slug',
           'subject.image_url',
           'subject.description',
+          'subject.created_at',
+          'admin.username',
+          'admin.email',
+          'admin.role',
         ]);
       // Apply search filter
 
@@ -237,6 +243,12 @@ export class SubjectService {
             image_url: subject.image_url,
             description: subject.description,
             subCount,
+            created_at: subject.created_at,
+            created_by: {
+              username: subject.created_by?.username,
+              email: subject.created_by?.email,
+              role: subject.created_by?.role,
+            },
           };
         }),
       );
@@ -495,7 +507,10 @@ export class SubjectService {
 
           // avoid duplicates: check existing by name or slug
           const exists = await this.subSubjectRepository.findOne({
-            where: [{ title: name }, { slug: slug }, { is_active: false }],
+            where: [
+              { title: name, is_active: true },
+              { slug: slug, is_active: true },
+            ],
           });
 
           if (exists) {
@@ -589,15 +604,23 @@ export class SubjectService {
       const skip = (page - 1) * limit;
       const qb = this.subSubjectRepository
         .createQueryBuilder('sub_subject')
-        .leftJoin('sub_subject.subject', 'subject')
+        .where('sub_subject.is_active = false')
+        .leftJoin('sub_subject.subject', 'subj')
+        .leftJoin('sub_subject.created_by', 'admin')
         .select([
           'sub_subject.id',
           'sub_subject.title',
           'sub_subject.slug',
           'sub_subject.image_url',
           'sub_subject.description',
-          'subject.id',
-          'subject.title',
+          'sub_subject.created_at',
+          'sub_subject.is_active',
+          'subj.id',
+          'subj.title',
+          'subj.slug',
+          'admin.username',
+          'admin.email',
+          'admin.role',
         ]);
 
       if (search) {
@@ -630,6 +653,18 @@ export class SubjectService {
             image_url: subSubject.image_url,
             description: subSubject.description,
             quizCount,
+            created_at: subSubject.subject
+              ? subSubject.subject.created_at
+              : null,
+            subject: {
+              title: subSubject.subject ? subSubject.subject.title : null,
+              slug: subSubject.subject ? subSubject.subject.slug : null,
+            },
+            created_by: {
+              username: subSubject.created_by?.username,
+              email: subSubject.created_by?.email,
+              role: subSubject.created_by?.role,
+            },
           };
         }),
       );
@@ -661,10 +696,12 @@ export class SubjectService {
       };
     } catch (error) {
       if (error instanceof HttpException) {
+        this.logger.log(`Error in findAllSubSubjects: ${error.message}`);
         throw error;
       }
+      this.logger.log(`Error in findAllSubSubjects: ${error.message}`);
       throw new HttpException(
-        'Failed to retrieve sub-subjects',
+        `Failed to retrieve sub-subjects: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

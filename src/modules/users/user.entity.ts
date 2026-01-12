@@ -1,44 +1,65 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity("users")
+export enum GenderType {
+  MALE = 'male',
+  FEMALE = 'female',
+  OTHER = 'other',
+  NULL = 'null',
+}
+
+@Entity('users')
 export class User {
-    // Define user entity properties and columns here
-    @PrimaryGeneratedColumn()
-    id: number;
+  // Define user entity properties and columns here
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({ unique: true })
-    username: string;
+  @Column({ unique: true })
+  username: string;
 
-    @Column()
-    password: string;
+  @Column()
+  password: string;
 
-    @Column({ unique: true })
-    email: string;
+  @Column({ unique: true })
+  email: string;
 
-    @Column({nullable: true})
-    full_name: string;
+  @Column({ nullable: true })
+  full_name: string;
 
-    @Column({nullable: true})
-    avatar_url: string;
+  @Column({ nullable: true })
+  avatar_url: string;
 
-    @Column({nullable: true})
-    address: string;
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
+  date_of_birth: Date;
 
-    @Column({nullable: true})
-    phone_number: string;
+  @Column({
+    type: 'enum',
+    enum: GenderType,
+    nullable: true,
+    default: GenderType.NULL,
+  })
+  gender: GenderType;
 
-    @Column({ default: false })
-    is_active: boolean;
+  @Column({ nullable: true })
+  address: string;
 
-    @Column({ default: false })
-    is_owner: boolean;
+  @Column({ nullable: true })
+  phone_number: string;
 
-    @Column({default: false})
-    is_verified: boolean;
+  @Column({ default: false })
+  is_active: boolean;
 
-    @Column({ nullable: true })
-    last_login: Date;
+  @Column({ default: false })
+  is_owner: boolean;
 
-    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    created_at: Date;
+  @Column({ default: false })
+  is_verified: boolean;
+
+  @Column({ nullable: true })
+  last_login: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
 }

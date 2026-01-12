@@ -1,7 +1,6 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Room } from '../rooms/room.entity';
-import { GameResult } from '../game-results/game-result.entity';
 
 @Entity('join_rooms')
 export class JoinRoom {
@@ -13,12 +12,14 @@ export class JoinRoom {
     onDelete: 'CASCADE',
     nullable: false,
   })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(() => Room, (room) => room.id, {
     onDelete: 'CASCADE',
     nullable: false,
   })
+  @JoinColumn({ name: 'room_id' })
   room: Room;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

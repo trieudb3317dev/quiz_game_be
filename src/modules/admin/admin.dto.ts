@@ -57,6 +57,10 @@ export class AdminProfileDto {
   full_name?: string;
   @IsString({ message: 'Avatar URL must be a string' })
   avatar_url?: string;
+  @IsString({
+    message: 'Gender must be a string',
+  })
+  gender?: string;
   @IsString({ message: 'Address must be a string' })
   address?: string;
   @IsString({ message: 'Phone number must be a string' })
@@ -70,6 +74,8 @@ export class ResponseAdminDto {
   role: string;
   full_name?: string;
   avatar_url?: string;
+  date_of_birth?: Date;
+  gender?: string;
   address?: string;
   phone_number?: string;
   last_login?: Date;
