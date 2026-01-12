@@ -27,9 +27,10 @@ export class RoomService {
   async createRoom(
     createRoomDto: CreateRoomDto,
     userId: number,
+    subSubjectId: number,
   ): Promise<{ message: string }> {
     try {
-      const { name, description, sub_subject_id } = createRoomDto;
+      const { name, description } = createRoomDto;
       if (!name || name.trim() === '') {
         this.logger.error('Room name is required');
         throw new HttpException(
@@ -67,11 +68,11 @@ export class RoomService {
       }
 
       const subSubject = await this.subSubjectRepository.findOne({
-        where: { id: sub_subject_id },
+        where: { id: subSubjectId },
       });
 
       if (!subSubject) {
-        this.logger.error(`SubSubject with ID ${sub_subject_id} not found`);
+        this.logger.error(`SubSubject with ID ${subSubjectId} not found`);
         throw new HttpException('SubSubject not found', HttpStatus.NOT_FOUND);
       }
 
@@ -104,11 +105,31 @@ export class RoomService {
     }
   }
 
-  async getRoomById(id: number): Promise<RoomDto> {
+  async getRoomById(id: number): Promise<any> {
     try {
-      const room = await this.roomRepository.findOne({
-        where: { id, is_active: false },
-      });
+      const room = await this.roomRepository.createQueryBuilder('room')
+        .leftJoin('room.created_by', 'created_by')
+        .leftJoin('room.sub_subject', 'sub_subject')
+        .leftJoin('room.session', 'session')
+        .where('room.id = :id', { id })
+        .select([
+          'room.id',
+          'room.name',
+          'room.slug',
+          'room.description',
+          'room.is_active',
+          'room.created_at',
+          'created_by.id',
+          'created_by.username',
+          'sub_subject.id',
+          'sub_subject.title',
+          'session.id',
+          'session.token',
+          'session.type',
+          'session.created_at',
+        ])
+        .getOne();
+        
       if (!room) {
         this.logger.error(`Room with ID ${id} not found`);
         throw new HttpException('Room not found', HttpStatus.NOT_FOUND);
@@ -118,8 +139,10 @@ export class RoomService {
         name: room.name,
         slug: room.slug,
         description: room.description,
-        is_active: room.is_active,
         created_at: room.created_at,
+        created_by: room.created_by,
+        sub_subject: room.sub_subject,
+        session: room.session,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -128,7 +151,7 @@ export class RoomService {
       }
       this.logger.error(`Unexpected error retrieving room: ${error.message}`);
       throw new HttpException(
-        'Internal server error',
+        `Internal server error ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

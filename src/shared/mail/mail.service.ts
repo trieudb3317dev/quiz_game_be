@@ -95,7 +95,7 @@ export class MailService {
     username: string,
     verificationToken: string,
   ): Promise<nodemailer.SentMessageInfo> {
-    const verificationUrl = `${this.configService.get<string>('FRONTEND_URL')}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${this.configService.get<string>('FRONTEND_URLS')}/verify-email?token=${verificationToken}`;
 
     return this.sendEmail({
       to,

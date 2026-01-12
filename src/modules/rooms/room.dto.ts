@@ -8,7 +8,6 @@ export class RoomDto {
 }
 
 export class CreateRoomDto {
-  sub_subject_id: number;
   name: string;
   slug?: string;
   description?: string;

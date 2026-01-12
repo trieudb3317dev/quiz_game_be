@@ -7,11 +7,14 @@ import { RoomController } from './room.controller';
 import { RoomService } from './room.service';
 import { User } from '../users/user.entity';
 import { Session } from '../sessions/session.entity';
+import { AuthModule } from '../auth/auth.module';
+import { Admin } from '../admin/admin.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Room, SubSubject, User, Session]),
+    TypeOrmModule.forFeature([Room, SubSubject, User, Admin, Session]),
     AdminModule,
+    AuthModule,
   ],
   controllers: [RoomController],
   providers: [RoomService],

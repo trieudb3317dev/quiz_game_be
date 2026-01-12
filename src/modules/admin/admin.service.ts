@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Admin, AdminRole } from './admin.entity';
+import { Admin, AdminRole, GenderType } from './admin.entity';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/shared/mail/mail.service';
@@ -44,12 +44,8 @@ export class AdminService {
           AdminRole.ADMIN,
       });
       await this.adminRepository.save(newUser);
-      const verificationToken = await this.generateVerificationToken(newUser);
-      await this.sendRegistrationConfirmationEmail(
-        email,
-        username,
-        verificationToken,
-      );
+      // const verificationToken = await this.generateVerificationToken(newUser);
+      await this.sendRegistrationConfirmationEmail(email, username);
       this.logger.log(`User ${username} registered successfully`);
       return { message: 'User registered successfully' };
     } catch (error) {
@@ -111,6 +107,7 @@ export class AdminService {
       this.generateJwtToken(user, response);
       this.generateRefreshToken(user, response);
       this.logger.log(`User ${username} logged in successfully`);
+      await this.adminRepository.update(user.id, { last_login: new Date() });
       return { message: 'User logged in successfully' };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -127,12 +124,12 @@ export class AdminService {
   async logout(response: Response): Promise<{ message: string }> {
     try {
       this.logger.log('Logging out user');
-      response.clearCookie('jwt', {
+      response.clearCookie('access_token', {
         httpOnly: true,
         secure: true,
         sameSite: 'none',
       });
-      response.clearCookie('refreshJwt', {
+      response.clearCookie('refresh_token', {
         httpOnly: true,
         secure: true,
         sameSite: 'none',
@@ -221,6 +218,8 @@ export class AdminService {
       role: user.role,
       full_name: user.full_name,
       avatar_url: user.avatar_url,
+      date_of_birth: user.date_of_birth,
+      gender: user.gender ? user.gender.toString() : undefined,
       address: user.address,
       phone_number: user.phone_number,
       last_login: user.last_login,
@@ -251,7 +250,14 @@ export class AdminService {
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-    await this.adminRepository.update(userId, updateUserDto);
+    await this.adminRepository.update(userId, {
+      ...updateUserDto,
+      gender: updateUserDto.gender
+        ? GenderType[
+            updateUserDto.gender.toUpperCase() as keyof typeof GenderType
+          ]
+        : undefined,
+    });
     this.logger.log(`User with ID ${userId} updated successfully`);
     return { message: 'User updated successfully' };
   }
@@ -279,9 +285,12 @@ export class AdminService {
       email: user.email,
       role: user.role,
     };
-    const token = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET,
+      expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    });
     this.logger.log(`Generated JWT token for user ${user.username}`);
-    response.cookie('jwt', token, {
+    response.cookie('access_token', token, {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
@@ -297,9 +306,12 @@ export class AdminService {
       email: user.email,
       role: user.role,
     };
-    const token = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET,
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    });
     this.logger.log(`Generated refresh token for user ${user.username}`);
-    response.cookie('refreshJwt', token, {
+    response.cookie('refresh_token', token, {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
@@ -344,7 +356,7 @@ export class AdminService {
   private async sendRegistrationConfirmationEmail(
     email: string,
     username: string,
-    token: string,
+    token?: string,
   ): Promise<void> {
     // Implement email sending logic here
     await this.mailService.sendRegisterationConfirmationEmail(
