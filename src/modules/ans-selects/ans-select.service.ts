@@ -8,6 +8,7 @@ import { JoinRoom } from '../join-rooms/join-room.entity';
 import { GameResult } from '../game-results/game-result.entity';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { PaginationDto, QueryDto } from './ans-select.dto';
+import e from 'express';
 
 @Injectable()
 export class AnsSelectService {
@@ -35,7 +36,8 @@ export class AnsSelectService {
     userId: number,
     joinRoomId: number,
     quizAnswerId: number,
-  ): Promise<{ correct?: boolean; score?: number; answer_select_id: number }> {
+    token?: string,
+  ): Promise<{ message: string }> {
     try {
       // validate user
       const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -93,21 +95,57 @@ export class AnsSelectService {
         await this.ansSelectRepository.save(ansSelect);
       }
 
-      // compute score: if selected answer is correct, award quiz.score (fallback to 0)
-      //   const quiz = (quizAnswer as any).quiz as any;
-      //   const reward = quiz && quiz.score ? Number(quiz.score) : 0;
-      //   const correct = !!quizAnswer.is_correct;
-      //   const score = correct ? reward : 0;
+      // create GameResult
+      const existingGameResult = await this.gameResultRepository.findOne({
+        where: {
+          join_room: { id: joinRoom.id, room: { session: { token: token } } },
+        } as any,
+        relations: [
+          'join_room',
+          'join_room.room',
+          'join_room.room.session',
+        ] as any,
+      });
 
-      //   // create GameResult record
-      //   const gameResult = this.gameResultRepository.create({
-      //     join_room: joinRoom as any,
-      //     answer_select: ansSelect as any,
-      //     score,
-      //   } as any);
-      //   await this.gameResultRepository.save(gameResult);
+      this.logger.log(
+        `Existing GameResult check for joinRoom ${joinRoom.id} and answerSelect ${ansSelect.id}`,
+      );
 
-      return { answer_select_id: ansSelect.id };
+      console.log('existingGameResult', existingGameResult);
+
+      if (existingGameResult) {
+        this.logger.log(
+          `GameResult already exists for joinRoom ${joinRoom.id} and answerSelect ${ansSelect.id}`,
+        );
+        // tính toán
+        const score = quizAnswer.is_correct
+          ? quizAnswer.quiz.score + existingGameResult.score
+          : existingGameResult.score;
+        const accuracy_bonus = quizAnswer.is_correct ? 5 : 0;
+        const speed_bonus = existingGameResult.speed_bonus ?? 0;
+        const total_score =
+          score + speed_bonus + accuracy_bonus + existingGameResult.total_score;
+
+        // cập nhật (dùng update hoặc save; save giữ entity lifecycle)
+        await this.gameResultRepository.update(existingGameResult.id, {
+          score,
+          accuracy_bonus,
+          speed_bonus,
+          total_score,
+        });
+        return { message: 'GameResult updated successfully' };
+      } else {
+        const gameResult = this.gameResultRepository.create({
+          join_room: joinRoom as any,
+          score: quizAnswer.is_correct ? quizAnswer.quiz.score : 0,
+          speed_bonus: 0,
+          accuracy_bonus: quizAnswer.is_correct ? 5 : 0,
+          total_score: quizAnswer.is_correct ? quizAnswer.quiz.score + 5 : 0,
+        } as any);
+        await this.gameResultRepository.save(gameResult);
+
+        return { message: 'GameResult created successfully' };
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         this.logger.error(`Failed to select answer: ${error.message}`);

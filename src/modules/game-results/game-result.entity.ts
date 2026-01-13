@@ -32,12 +32,6 @@ export class GameResult {
   @Column({ default: 0 })
   total_score: number;
 
-  @Column({ default: false })
-  correct: boolean;
-
-  @Column({ nullable: true })
-  answer_select_id: number;
-
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 }
