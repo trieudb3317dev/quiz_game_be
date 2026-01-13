@@ -8,6 +8,8 @@ import { AnsSelectService } from './ans-select.service';
 import { User } from '../users/user.entity';
 import { GameResult } from '../game-results/game-result.entity';
 import { AnswerSelectController } from './ans-select.controller';
+import { Room } from '../rooms/room.entity';
+import { Session } from '../sessions/session.entity';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { AnswerSelectController } from './ans-select.controller';
       JoinRoom,
       User,
       GameResult,
+      Room,
+      Session,
     ]),
     AuthModule,
   ],
