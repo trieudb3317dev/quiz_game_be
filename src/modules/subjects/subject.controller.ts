@@ -115,9 +115,12 @@ export class SubjectController {
   }
 
   // Endpoint to get subjects along with their sub-subjects
-  
+
   @ApiOperation({ summary: 'Import sub-subjects from CSV file' })
-  @ApiResponse({ status: 201, description: 'Sub-subjects imported successfully.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Sub-subjects imported successfully.',
+  })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @Post('sub-subjects/import/csv')
@@ -142,11 +145,17 @@ export class SubjectController {
       filePathToPass = fp;
     }
     const userId = req.user ? req.user.id : null;
-    return this.subjectService.importSubSubjectsFromCSV(userId, filePathToPass!);
+    return this.subjectService.importSubSubjectsFromCSV(
+      userId,
+      filePathToPass!,
+    );
   }
 
   @ApiOperation({ summary: 'Export sub-subjects to CSV file' })
-  @ApiResponse({ status: 200, description: 'Sub-subjects exported successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sub-subjects exported successfully.',
+  })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @Get('sub-subjects/export/csv')
   @HttpCode(HttpStatus.OK)
@@ -156,16 +165,25 @@ export class SubjectController {
   }
 
   @ApiOperation({ summary: 'Get sub-subjects' })
-  @ApiResponse({ status: 200, description: 'Sub-subjects retrieved successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sub-subjects retrieved successfully.',
+  })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
-  @Get('sub-subjects/all')
+  @Get('/:subjectId/sub-subjects/all')
   @HttpCode(HttpStatus.OK)
-  async getSubSubjects(@Query() query: QueryDto) {
-    return this.subjectService.findAllSubSubjects(query);
+  async getSubSubjects(
+    @Query() query: QueryDto,
+    @Param('subjectId') subjectId: number,
+  ) {
+    return this.subjectService.findAllSubSubjects(query, subjectId);
   }
 
   @ApiOperation({ summary: 'Get sub-subject by ID' })
-  @ApiResponse({ status: 200, description: 'Sub-subject retrieved successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sub-subject retrieved successfully.',
+  })
   @ApiResponse({ status: 404, description: 'Sub-subject not found.' })
   @Get('sub-subjects/:id')
   @HttpCode(HttpStatus.OK)
@@ -174,7 +192,10 @@ export class SubjectController {
   }
 
   @ApiOperation({ summary: 'Update sub-subject' })
-  @ApiResponse({ status: 200, description: 'Sub-subject updated successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sub-subject updated successfully.',
+  })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @Put('sub-subjects/:id')
   @HttpCode(HttpStatus.OK)
@@ -189,7 +210,10 @@ export class SubjectController {
   }
 
   @ApiOperation({ summary: 'Delete sub-subject by ID' })
-  @ApiResponse({ status: 200, description: 'Sub-subject deleted successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sub-subject deleted successfully.',
+  })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   @Delete('sub-subjects/:id')
   @HttpCode(HttpStatus.OK)

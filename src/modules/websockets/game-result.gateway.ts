@@ -1,4 +1,3 @@
-
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
@@ -10,19 +9,19 @@ import {
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
-  namespace: '/quiz',
+  namespace: '/game-result',
   cors: {
     origin: '*',
   },
   transports: ['websocket', 'polling'],
 })
-export class QuizGateway    
+export class GameResultGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
   server: Server;
 
-  private readonly logger = new Logger(QuizGateway.name);
+  private readonly logger = new Logger(GameResultGateway.name);
 
   async handleConnection(client: Socket) {
     this.logger.log(`🔌 Client connected: ${client.id}`);
@@ -104,8 +103,4 @@ export class QuizGateway
     return cookies;
   }
   // Implement gateway methods and event handlers as needed
-
-  private async boardcardQuiz() {
-    // Implementation logic for boardcard quiz
-  }
 }

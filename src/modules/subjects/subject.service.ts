@@ -207,6 +207,7 @@ export class SubjectService {
           'subject.slug',
           'subject.image_url',
           'subject.description',
+          'subject.field_type',
           'subject.created_at',
           'admin.username',
           'admin.email',
@@ -215,10 +216,10 @@ export class SubjectService {
       // Apply search filter
 
       if (search) {
-        qb.where('subject.title ILIKE :search', { search: `%${search}%` });
+        qb.where(`subject.title ILIKE :search`, { search: `%${search}%` });
       }
 
-      // Get total count for pagination
+      // Get total count for pagination`
       const totalItems = await qb.getCount();
       const totalPages = Math.ceil(totalItems / limit);
 
@@ -242,6 +243,7 @@ export class SubjectService {
             slug: subject.slug,
             image_url: subject.image_url,
             description: subject.description,
+            field_type: subject.field_type,
             subCount,
             created_at: subject.created_at,
             created_by: {
@@ -592,6 +594,7 @@ export class SubjectService {
 
   async findAllSubSubjects(
     query: QueryDto,
+    subjectId: number,
   ): Promise<ResponseDto<SubSubjectResponseDto>> {
     try {
       const {
@@ -607,6 +610,7 @@ export class SubjectService {
         .where('sub_subject.is_active = false')
         .leftJoin('sub_subject.subject', 'subj')
         .leftJoin('sub_subject.created_by', 'admin')
+        .andWhere('subj.id = :subjectId', { subjectId })
         .select([
           'sub_subject.id',
           'sub_subject.title',
@@ -707,11 +711,12 @@ export class SubjectService {
     }
   }
 
-  async findSubSubjectById(id: number): Promise<SubSubjectResponseDto> {
+  async findSubSubjectById(id: number): Promise<any> {
     try {
       const subSubject = await this.subSubjectRepository
         .createQueryBuilder('sub_subject')
         .leftJoin('sub_subject.subject', 'subject')
+        .leftJoin('sub_subject.created_by', 'admin')
         .where('sub_subject.id = :id', { id })
         .andWhere('sub_subject.is_active = false')
         .select([
@@ -722,6 +727,9 @@ export class SubjectService {
           'sub_subject.description',
           'subject.id',
           'subject.title',
+          'admin.username',
+          'admin.email',
+          'admin.role',
         ])
         .getOne();
 
@@ -738,6 +746,15 @@ export class SubjectService {
         image_url: subSubject.image_url,
         description: subSubject.description,
         quizCount,
+        subject: {
+          id: subSubject.subject ? subSubject.subject.id : null,
+          title: subSubject.subject ? subSubject.subject.title : null,
+        },
+        created_by: {
+          username: subSubject.created_by?.username,
+          email: subSubject.created_by?.email,
+          role: subSubject.created_by?.role,
+        },
       };
     } catch (error) {
       if (error instanceof HttpException) {

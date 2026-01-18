@@ -39,6 +39,7 @@ export class SubjectResponseDto {
   title: string;
   slug?: string;
   image_url?: string;
+  field_type?: string;
   description?: string;
   subCount: number;
 }
