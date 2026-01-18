@@ -1,6 +1,13 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Subject } from './subject.entity';
 import { Admin } from '../admin/admin.entity';
+import { User } from '../users/user.entity';
 
 @Entity('sub_subjects')
 export class SubSubject {
@@ -31,6 +38,21 @@ export class SubSubject {
 
   @Column({ nullable: true })
   description: string;
+
+  @Column({ type: 'int', default: 0 })
+  total_quizzes: number;
+
+  @Column({ type: 'int', default: 0 })
+  total_rooms: number;
+
+  @OneToMany(() => User, (user) => user.id, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  enrolled_users: User[] | null;
+
+  @Column({ default: false })
+  is_locked: boolean;
 
   @Column({ default: false })
   is_active: boolean;
