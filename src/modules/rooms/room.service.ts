@@ -107,7 +107,8 @@ export class RoomService {
 
   async getRoomById(id: number): Promise<any> {
     try {
-      const room = await this.roomRepository.createQueryBuilder('room')
+      const room = await this.roomRepository
+        .createQueryBuilder('room')
         .leftJoin('room.created_by', 'created_by')
         .leftJoin('room.sub_subject', 'sub_subject')
         .leftJoin('room.session', 'session')
@@ -129,7 +130,7 @@ export class RoomService {
           'session.created_at',
         ])
         .getOne();
-        
+
       if (!room) {
         this.logger.error(`Room with ID ${id} not found`);
         throw new HttpException('Room not found', HttpStatus.NOT_FOUND);
@@ -236,5 +237,42 @@ export class RoomService {
     this.logger.log(`Session saved with ID: ${session.id}`);
 
     return session;
+  }
+
+  // Find room by session token
+  async findRoomIdBySessionToken(
+    token: string,
+  ): Promise<{ id: number } | null> {
+    try {
+      const session = await this.sessionRepository.findOne({
+        where: { token },
+      });
+      if (!session || session.type !== 'pending') {
+        this.logger.warn(`No session found with token: ${token}`);
+        throw new HttpException('Session not found', HttpStatus.NOT_FOUND);
+      }
+      const room = await this.roomRepository
+        .createQueryBuilder('room')
+        .leftJoinAndSelect('room.session', 'session')
+        .where('session.id = :id', { id: session.id })
+        .getOne();
+
+      if (!room) {
+        this.logger.warn(`No room found with session token: ${token}`);
+        throw new HttpException('Room not found', HttpStatus.NOT_FOUND);
+      }
+      return room ? { id: room.id } : null;
+    } catch (error) {
+      this.logger.error(
+        `Error finding room by session token: ${error.message}`,
+      );
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Internal server error ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

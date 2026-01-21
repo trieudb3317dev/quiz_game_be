@@ -75,4 +75,13 @@ export class RoomController {
   async deleteRoom(@Param('id') id: number) {
     return this.roomService.deleteRoom(id);
   }
+
+  @ApiOperation({ summary: 'Find room ID by session token' })
+  @ApiResponse({ status: 200, description: 'Room ID retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Room not found.' })
+  @Get('session/:token')
+  @HttpCode(HttpStatus.OK)
+  async findRoomIdBySessionToken(@Param('token') token: string) {
+    return this.roomService.findRoomIdBySessionToken(token);
+  }
 }

@@ -54,7 +54,6 @@ export class JoinRoomService {
       return { message: 'Joined room successfully' };
     } catch (error) {
       if (error instanceof HttpException) {
-        this.logger.error(`Failed to join room: ${error.message}`);
         throw error;
       }
       this.logger.error(`Unexpected error: ${error.message}`);
@@ -87,7 +86,6 @@ export class JoinRoomService {
       return { message: 'Left room successfully' };
     } catch (error) {
       if (error instanceof HttpException) {
-        this.logger.error(`Failed to leave room: ${error.message}`);
         throw error;
       }
       this.logger.error(`Unexpected error: ${error.message}`);

@@ -26,6 +26,18 @@ async function bootstrap() {
   const frontendUrls = configService.get<string>('FRONTEND_URLS').split(','); // Tách các URL nếu có nhiều hơn 1 domain
 
   const port = configService.get<number>('APP_PORT', 8080);
+  const host = configService.get<string>('APP_HOST', '0.0.0.0');
+
+  // If someone sets APP_HOST to the Android emulator loopback (10.0.2.2)
+  // it cannot be bound on the host machine and will cause EADDRNOTAVAIL.
+  // Accept 10.0.2.2 as a client-side address but bind the server to 0.0.0.0 instead.
+  let bindHost = host;
+  if (host === '10.0.2.2') {
+    console.warn(
+      "APP_HOST is set to '10.0.2.2' (Android emulator loopback). This address is not bindable on the host. Falling back to '0.0.0.0'.",
+    );
+    bindHost = '0.0.0.0';
+  }
 
   // Enable validation
   // app.useGlobalPipes(new ValidationPipe({
@@ -59,14 +71,16 @@ async function bootstrap() {
       }
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Accept',
+    allowedHeaders: 'Content-Type, Accept, Authorization, Cookie',
     credentials: true, // Cho phép cookie
   });
 
   app.use(cookieParser());
-  await app.listen(port);
-  console.log(`\uD83D\uDE80 Ứng dụng đang chạy tại: http://localhost:${port}`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/api-docs`);
+  await app.listen(port, bindHost);
+  // Helpful console output: mention common emulator loopback
+  const hostForConsole = bindHost === '0.0.0.0' ? 'localhost (and emulator host 10.0.2.2)' : bindHost;
+  console.log(`🚀 Application is running at: http://${hostForConsole}:${port}`);
+  console.log(`📚 Swagger docs: http://${hostForConsole}:${port}/api-docs`);
 }
 
 bootstrap();
