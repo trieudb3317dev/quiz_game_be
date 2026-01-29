@@ -7,10 +7,11 @@ import { AuthModule } from '../auth/auth.module';
 import { JoinRoomController } from './join-room.controller';
 import { JoinRoomService } from './join-room.service';
 import { Admin } from '../admin/admin.entity';
+import { SubSubject } from '../subjects/sub-subject.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([JoinRoom, Room, User, Admin]),
+    TypeOrmModule.forFeature([JoinRoom, Room, User, Admin, SubSubject]),
     AuthModule,
   ],
   controllers: [JoinRoomController],

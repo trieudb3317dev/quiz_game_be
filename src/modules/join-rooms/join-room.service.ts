@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { Room } from '../rooms/room.entity';
 import { User } from '../users/user.entity';
 import { JoinersResponseDto, QueryDto, ResponseDto } from './join-room.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class JoinRoomService {
@@ -16,6 +17,7 @@ export class JoinRoomService {
     private readonly roomRepository: Repository<Room>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async joinRoom(userId: number, roomId: number): Promise<{ message: string }> {
@@ -51,6 +53,10 @@ export class JoinRoomService {
       });
       await this.joinRoomRepository.save(joinRoom);
       this.logger.log(`User ${userId} successfully joined room ${roomId}`);
+      this.eventEmitter.emit('JoinRoom.joined', {
+        roomId: roomId,
+        userId: userId,
+      });
       return { message: 'Joined room successfully' };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -226,7 +232,7 @@ export class JoinRoomService {
           'room.name',
           'join_room.joined_at',
         ])
-        .where('join_room.id = :joinerId', { joinerId })
+        .where('user.id = :joinerId', { joinerId })
         .andWhere('room.id = :roomId', { roomId })
         .getOne();
 
@@ -253,8 +259,11 @@ export class JoinRoomService {
       };
     } catch (error) {
       this.logger.error(`Failed to retrieve joiner record: ${error.message}`);
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(
-        'Internal server error',
+        `Internal server error ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

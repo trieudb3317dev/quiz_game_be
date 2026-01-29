@@ -1,4 +1,5 @@
 import { Injectable, Logger, Search } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnswerSelect } from './ans-select.entity';
 import { Repository } from 'typeorm';
@@ -24,6 +25,7 @@ export class AnsSelectService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(GameResult)
     private readonly gameResultRepository: Repository<GameResult>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -45,10 +47,11 @@ export class AnsSelectService {
         throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
       }
 
-      // validate joinRoom
+      // validate joinRoom (load room and session so we can emit later)
       const joinRoom = await this.joinRoomRepository.findOne({
         where: { id: joinRoomId },
-      });
+        relations: ['room', 'room.session', 'user'],
+      } as any);
       if (!joinRoom) {
         throw new HttpException('Joiner not found', HttpStatus.NOT_FOUND);
       }
@@ -98,7 +101,7 @@ export class AnsSelectService {
       // create GameResult
       const existingGameResult = await this.gameResultRepository.findOne({
         where: {
-          join_room: { id: joinRoom.id, room: { session: { token: token } } },
+          join_room: { id: joinRoom.id },
         } as any,
         relations: [
           'join_room',
@@ -133,6 +136,15 @@ export class AnsSelectService {
           speed_bonus,
           total_score,
         });
+        // emit event so game-result gateway can broadcast updated results
+        try {
+          const tokenToEmit = (joinRoom.room && (joinRoom.room as any).session && (joinRoom.room as any).session.token) || token;
+          if (tokenToEmit) {
+            this.eventEmitter.emit('GameResult.created', { token: tokenToEmit });
+          }
+        } catch (emitErr) {
+          this.logger.warn(`Failed to emit GameResult.created: ${emitErr}`);
+        }
         return { message: 'GameResult updated successfully' };
       } else {
         const gameResult = this.gameResultRepository.create({
@@ -143,6 +155,15 @@ export class AnsSelectService {
           total_score: quizAnswer.is_correct ? quizAnswer.quiz.score + 5 : 0,
         } as any);
         await this.gameResultRepository.save(gameResult);
+        // emit event so game-result gateway can broadcast new result
+        try {
+          const tokenToEmit = (joinRoom.room && (joinRoom.room as any).session && (joinRoom.room as any).session.token) || token;
+          if (tokenToEmit) {
+            this.eventEmitter.emit('GameResult.created', { token: tokenToEmit });
+          }
+        } catch (emitErr) {
+          this.logger.warn(`Failed to emit GameResult.created: ${emitErr}`);
+        }
 
         return { message: 'GameResult created successfully' };
       }
