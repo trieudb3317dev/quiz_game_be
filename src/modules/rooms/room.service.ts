@@ -69,6 +69,7 @@ export class RoomService {
 
       const subSubject = await this.subSubjectRepository.findOne({
         where: { id: subSubjectId },
+        relations: ['rooms'],
       });
 
       if (!subSubject) {
@@ -91,6 +92,11 @@ export class RoomService {
 
       const room = this.roomRepository.create(body);
       await this.roomRepository.save(room);
+
+      subSubject.rooms = subSubject.rooms
+        ? [...subSubject.rooms, room]
+        : [room];
+      await this.subSubjectRepository.save(subSubject);
       return { message: 'Room created successfully' };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -99,7 +105,7 @@ export class RoomService {
       }
       this.logger.error(`Unexpected error creating room: ${error.message}`);
       throw new HttpException(
-        'Internal server error',
+        `Internal server error ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -142,7 +148,6 @@ export class RoomService {
         description: room.description,
         created_at: room.created_at,
         created_by: room.created_by,
-        sub_subject: room.sub_subject,
         session: room.session,
       };
     } catch (error) {

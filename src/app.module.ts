@@ -1,6 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { databaseConfig } from './config/database.config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -20,7 +21,9 @@ import { AnswerSelectModule } from './modules/ans-selects/ans-select.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env'}),
-    ScheduleModule.forRoot(),
+  ScheduleModule.forRoot(),
+  // EventEmitterModule provides a DI token for EventEmitter2 used across modules
+  EventEmitterModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => databaseConfig(configService),
       inject: [ConfigService],

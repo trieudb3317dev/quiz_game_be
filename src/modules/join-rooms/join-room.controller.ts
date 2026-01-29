@@ -57,12 +57,12 @@ export class JoinRoomController {
   })
   @ApiResponse({ status: 200, description: 'Joiner retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Joiner not found.' })
-  @Get(':roomId/joiners/:joinerId')
+  @Get(':roomId/joiners/:userId')
   @HttpCode(HttpStatus.OK)
   async getJoiner(
     @Param('roomId') roomId: number,
-    @Param('joinerId') joinerId: number,
+    @Param('userId') userId: number,
   ) {
-    return this.joinRoomService.getJoiner(Number(joinerId), Number(roomId));
+    return this.joinRoomService.getJoiner(Number(userId), Number(roomId));
   }
 }

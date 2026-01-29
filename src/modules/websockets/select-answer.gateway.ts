@@ -1,31 +1,31 @@
-import { Logger } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
-import { JwtService } from '@nestjs/jwt';
 import {
+  WebSocketGateway,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  WebSocketGateway,
   WebSocketServer,
+  SubscribeMessage,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { GameResultService } from '../game-results/game-result.service';
-import { RoomService } from '../rooms/room.service';
+import { Socket, Server } from 'socket.io';
+import { JoinRoomService } from '../join-rooms/join-room.service';
+import { Logger } from '@nestjs/common';
+// use socket.io Server for WebSocketServer
+import { JwtService } from '@nestjs/jwt';
+import { AnsSelectService } from '../ans-selects/ans-select.service';
 
 @WebSocketGateway({
-  namespace: '/game-result',
+  namespace: '/select-answer',
   cors: {
     origin: '*',
   },
   transports: ['websocket', 'polling'],
 })
-export class GameResultGateway
+export class SelectAnswerGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
   server: Server;
 
-  private readonly logger = new Logger(GameResultGateway.name);
-
+  private readonly logger = new Logger(SelectAnswerGateway.name);
   async handleConnection(client: Socket) {
     this.logger.log(`🔌 Client connected: ${client.id}`);
 
@@ -51,8 +51,8 @@ export class GameResultGateway
   }
 
   constructor(
-    private readonly resultService: GameResultService,
-    private readonly roomService: RoomService,
+    private readonly selectAnswerService: AnsSelectService,
+    private readonly joinRoomService: JoinRoomService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -88,9 +88,14 @@ export class GameResultGateway
       const payload = this.jwtService.verify(token, {
         secret: process.env.JWT_SECRET || 'your-secret-key',
       });
+      // AuthService signs tokens with payload.userId (see AuthService.generateJwtToken)
+      // Support multiple common claim names as fallbacks for robustness.
+      const userId =
+        payload.userId || payload.sub || payload.user_id || payload.id;
+      const username = payload.username || payload.wallet_address || 'Unknown';
       return {
-        user_id: payload.sub || payload.user_id,
-        username: payload.username || payload.wallet_address || 'Unknown',
+        user_id: userId,
+        username,
       };
     } catch (error) {
       this.logger.error('JWT verification from cookie failed:', error);
@@ -109,36 +114,62 @@ export class GameResultGateway
     });
     return cookies;
   }
-  // Implement gateway methods and event handlers as needed
 
-  @OnEvent('GameResult.created')
-  async handleGameResultCreatedEvent(payload: any) {
-    this.logger.log(
-      `📢 Emitting GameResult.created event for token ${payload.token}`,
-    );
-    await this.broadcastNewGameResult(payload.token);
+  // Thêm các phương thức xử lý sự kiện WebSocket khác tại đây
+
+  @SubscribeMessage('selectAnswer')
+  async handleAnswerSelectedEvent(payload: {
+    roomId: number;
+    userId: number;
+    answerId: number;
+  }) {
+    try {
+      const roomId = payload.roomId;
+      const userId = payload.userId;
+      const answerId = payload.answerId;
+      this.logger.log(`Broadcasting answer selected for room ${roomId}`);
+      // Implement broadcasting logic here
+      await this.broadcastAnswerSelected(roomId, userId, answerId);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error handling SelectAnswer.selected event: ${error.message}`,
+        );
+      }
+    }
   }
 
-  async broadcastNewGameResult(token: any) {
-    const logger = new Logger('GameResultGateway');
-    logger.log(`Broadcasting new game result: ${JSON.stringify(token)}`);
-    const gameResult = await this.resultService.findAllSessionToken(token);
-    if (!gameResult) {
-      logger.warn(`No game result found for token: ${token}`);
-      return;
+  private async broadcastAnswerSelected(
+    roomId: number,
+    userId: number,
+    answerId: number,
+  ) {
+    try {
+      this.logger.log(`Broadcasting answer selected for room ${roomId}`);
+      // Implement broadcasting logic here
+      const joiner = await this.joinRoomService.getJoiner(userId, roomId);
+      if (!joiner) {
+        this.logger.warn(
+          `Joiner ${userId} not found in room ${roomId}, cannot broadcast answer selected`,
+        );
+        return;
+      }
+
+      const joinRoomId = joiner.id;
+
+      await this.selectAnswerService.selectAnswer(userId, joinRoomId, answerId);
+      // Add broadcasting logic here, for example:
+      this.server
+        .to(`room_${roomId}`)
+        .emit('answerSelected', { joinRoomId, answerId });
+
+      this.logger.log(`Answer selected broadcasted for room ${roomId}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error broadcasting answer selected: ${error.message}`,
+        );
+      }
     }
-    const roomId = await this.roomService.findRoomIdBySessionToken(token);
-    if (!roomId) {
-      logger.warn(`No room found for session token: ${token}`);
-      return;
-    }
-    this.server
-      .to(`room_${roomId}`)
-      .emit('GameResult.newResult', { gameResult });
-    logger.log(
-      `Emitted new game result to room_${roomId}: ${JSON.stringify(
-        gameResult,
-      )}`,
-    );
   }
 }

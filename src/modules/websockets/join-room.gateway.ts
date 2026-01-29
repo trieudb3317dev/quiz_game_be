@@ -18,7 +18,6 @@ import { JwtService } from '@nestjs/jwt';
     origin: '*',
   },
   transports: ['websocket', 'polling'],
-  path: '/socket.io',
 })
 export class JoinRoomGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -89,9 +88,14 @@ export class JoinRoomGateway
       const payload = this.jwtService.verify(token, {
         secret: process.env.JWT_SECRET || 'your-secret-key',
       });
+      // AuthService signs tokens with payload.userId (see AuthService.generateJwtToken)
+      // Support multiple common claim names as fallbacks for robustness.
+      const userId =
+        payload.userId || payload.sub || payload.user_id || payload.id;
+      const username = payload.username || payload.wallet_address || 'Unknown';
       return {
-        user_id: payload.sub || payload.user_id,
-        username: payload.username || payload.wallet_address || 'Unknown',
+        user_id: userId,
+        username,
       };
     } catch (error) {
       this.logger.error('JWT verification from cookie failed:', error);
@@ -133,7 +137,9 @@ export class JoinRoomGateway
       try {
         client.join(`room_${roomId}`);
       } catch (err) {
-        this.logger.warn(`Failed to join socket.io room for socket ${client.id}: ${err}`);
+        this.logger.warn(
+          `Failed to join socket.io room for socket ${client.id}: ${err}`,
+        );
       }
       client.emit('joinedRoom', { roomId });
       // broadcast updated joiners to members of this room
@@ -167,7 +173,9 @@ export class JoinRoomGateway
       try {
         client.leave(`room_${roomId}`);
       } catch (err) {
-        this.logger.warn(`Failed to leave socket.io room for socket ${client.id}: ${err}`);
+        this.logger.warn(
+          `Failed to leave socket.io room for socket ${client.id}: ${err}`,
+        );
       }
       client.emit('leftRoom', { roomId });
       // broadcast updated joiners to remaining members of this room
@@ -181,7 +189,7 @@ export class JoinRoomGateway
   }
 
   @OnEvent('JoinRoom.joined')
-  async handleRoomUpdatedEvent(payload: any) {
+  async handleRoomUpdatedEvent(payload: { roomId: number; userId: number }) {
     try {
       const roomId = payload.roomId;
       this.logger.log(`Broadcasting room update for room ${roomId}`);
@@ -199,12 +207,50 @@ export class JoinRoomGateway
     try {
       this.logger.log(`Broadcasting user joined for room ${roomId}`);
       const data = await this.joinRoomService.getJoinersByRoom(roomId, {});
-      // Emit only to sockets joined to this room
-      if (this.server && typeof this.server.to === 'function') {
-        (this.server as Server).to(`room_${roomId}`).emit('userJoined', { roomId, data });
-      } else {
-        // fallback broadcast to all
-        (this.server as any).emit('userJoined', { roomId, data });
+      console.log('Broadcast data:', data);
+      this.logger.log(`Broadcast data: ${
+        Array.isArray(data) ? data.length : (data && data.data ? data.data.length : 'n/a')
+      } items`);
+
+      // Count sockets currently in the room (async)
+      try {
+        const sockets = await this.server.in(`room_${roomId}`).allSockets();
+        this.logger.log(`Sockets currently in room_${roomId}: ${sockets.size}`);
+      } catch (countErr) {
+        this.logger.warn(`Could not count sockets for room_${roomId}: ${countErr}`);
+      }
+
+      // Emit only to sockets joined to this room. Some Nest injection returns
+      // a Namespace object (when namespace is configured) which doesn't have
+      // `of`, so guard the call and fallback to server-level `to`.
+      try {
+        let emitted = false;
+        // If server.of exists (full Server), prefer emitting via namespace
+        if (typeof (this.server as any).of === 'function') {
+          try {
+            const nsp = (this.server as any).of('/join-room');
+            if (nsp && typeof nsp.to === 'function') {
+              nsp.to(`room_${roomId}`).emit('userJoined', { roomId, data });
+              this.logger.log(`Emitted userJoined to namespace /join-room room_${roomId}`);
+              emitted = true;
+            }
+          } catch (innerErr) {
+            this.logger.warn(`server.of('/join-room') call failed: ${innerErr}`);
+          }
+        }
+
+        // Fallback: emit using the injected server (might be Namespace)
+        if (!emitted && typeof (this.server as any).to === 'function') {
+          (this.server as any).to(`room_${roomId}`).emit('userJoined', { roomId, data });
+          this.logger.log(`Emitted userJoined via injected server to room_${roomId}`);
+          emitted = true;
+        }
+
+        if (!emitted) {
+          this.logger.warn(`No available emit method for room_${roomId}`);
+        }
+      } catch (emitErr) {
+        this.logger.error(`Emit failed for room_${roomId}: ${emitErr}`);
       }
     } catch (error) {
       if (error instanceof Error) {

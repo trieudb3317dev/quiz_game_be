@@ -563,6 +563,11 @@ export class QuizService {
       const nextPage = page * limit < totalItems ? page + 1 : false;
       const prevPage = page > 1 ? page - 1 : false;
 
+      const totalTimer = quizzes.reduce(
+        (acc, q) => acc + (q.time_limit ?? 0),
+        0,
+      );
+
       const response = quizzes.map((q) => ({
         id: q.id,
         sub_subject: q.sub_subject
@@ -607,6 +612,7 @@ export class QuizService {
           prevPage,
         },
         time_started: new Date(),
+        time_completed: new Date(Date.now() + totalTimer * 1000),
       };
     } catch (error) {
       if (error instanceof HttpException) {

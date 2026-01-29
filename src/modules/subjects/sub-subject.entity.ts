@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -8,6 +9,7 @@ import {
 import { Subject } from './subject.entity';
 import { Admin } from '../admin/admin.entity';
 import { User } from '../users/user.entity';
+import { Room } from '../rooms/room.entity';
 
 @Entity('sub_subjects')
 export class SubSubject {
@@ -49,7 +51,19 @@ export class SubSubject {
     nullable: true,
     onDelete: 'CASCADE',
   })
+  // Users enrolled in this sub-subject. Use ManyToMany with an explicit join table
+  // because User does not have a back-reference defined.
+  @OneToMany(() => User, (user) => user.id, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
   enrolled_users: User[] | null;
+
+  @OneToMany(() => Room, (room) => room.sub_subject, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  rooms: Room[] | null;
 
   @Column({ default: false })
   is_locked: boolean;

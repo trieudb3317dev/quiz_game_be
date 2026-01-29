@@ -29,13 +29,6 @@ export class Room {
   @JoinColumn({name: 'session_id'})
   session: Session | null;
 
-  @OneToOne(() => SubSubject, (subSubject) => subSubject.id, {
-    onDelete: 'SET NULL',
-    nullable: true,
-  })
-  @JoinColumn({name: 'sub_subject_id'})
-  sub_subject: SubSubject | null;
-
   @Column({ unique: true })
   name: string;
 
@@ -44,6 +37,13 @@ export class Room {
 
   @Column({ nullable: true })
   description: string;
+
+  @ManyToOne(() => SubSubject, (sub) => sub.rooms, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'sub_subject_id' })
+  sub_subject: SubSubject | null;
 
   @Column({ default: false })
   is_active: boolean;
